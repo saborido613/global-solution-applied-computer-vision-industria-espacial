@@ -2,43 +2,45 @@ import cv2
 import numpy as np
 import os
 import json
+import glob
 from datetime import datetime
 
 class DetectorIncendioSatelital:
     """
     Classe responsável pelo processamento digital de imagens (PDI) de satélite
-    para a deteção automática, calibração e exportação de alertas de incêndio.
+    para simulação de órbita, detecção de queimadas e exportação de payloads.
     """
-    def __init__(self, caminho_imagem):
-        self.caminho_imagem = caminho_imagem
+    def __init__(self, pasta_imagens):
+        self.pasta_imagens = pasta_imagens
+        self.lista_imagens = []
         self.img_original = None
         self.img_hsv = None
         
-        # Limites iniciais padrão para o filtro do fogo (calibrados anteriormente)
+        # Valores calibrados padrão para o filtro do fogo
         self.h_min, self.s_min, self.v_min = 0, 100, 200
         self.h_max, self.s_max, self.v_max = 25, 255, 255
 
-    def carregar_imagem(self):
-        """Carrega a imagem do disco e verifica a sua existência."""
-        if not os.path.exists(self.caminho_imagem):
-            print(f"[ERRO] Imagem não encontrada: {caminho_imagem}")
-            return False
+    def mapear_arquivos_orbita(self):
+        """Busca todas as imagens válidas dentro da pasta designada."""
+        padrao_busca = os.path.join(self.pasta_imagens, "*.*")
+        arquivos = glob.glob(padrao_busca)
         
-        self.img_original = cv2.imread(self.caminho_imagem)
-        self.registrar_log(f"Imagem carregada com sucesso. Dimensões: {self.img_original.shape}")
-        return True
+        # Filtrar apenas formatos de imagem comuns
+        self.lista_imagens = [arq for arq in arquivos if arq.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
+        self.lista_imagens.sort() # Ordena para a simulação ter sequência
+        
+        print(f"[LOG] Órbita mapeada. {len(self.lista_imagens)} quadrantes terrestres prontos para análise.")
+        return len(self.lista_imagens) > 0
 
     @staticmethod
     def _funcao_vazia(x):
-        """Função de callback obrigatória para as Trackbars do OpenCV."""
         pass
 
     def inicializar_painel_controle(self):
-        """Cria a janela de trackbars para a calibração dos filtros."""
+        """Cria a janela de trackbars para a calibração fina."""
         cv2.namedWindow("Painel de Controle")
         cv2.resizeWindow("Painel de Controle", 400, 350)
 
-        # Registrar os seletores dinâmicos
         cv2.createTrackbar("H Minimo", "Painel de Controle", self.h_min, 180, self._funcao_vazia)
         cv2.createTrackbar("S Minimo", "Painel de Controle", self.s_min, 255, self._funcao_vazia)
         cv2.createTrackbar("V Minimo", "Painel de Controle", self.v_min, 255, self._funcao_vazia)
@@ -47,7 +49,6 @@ class DetectorIncendioSatelital:
         cv2.createTrackbar("V Maximo", "Painel de Controle", self.v_max, 255, self._funcao_vazia)
 
     def atualizar_valores_filtros(self):
-        """Lê os valores atuais das barras de calibração."""
         self.h_min = cv2.getTrackbarPos("H Minimo", "Painel de Controle")
         self.s_min = cv2.getTrackbarPos("S Minimo", "Painel de Controle")
         self.v_min = cv2.getTrackbarPos("V Minimo", "Painel de Controle")
@@ -56,7 +57,6 @@ class DetectorIncendioSatelital:
         self.v_max = cv2.getTrackbarPos("V Maximo", "Painel de Controle")
 
     def processar_pipeline_pdi(self):
-        """Executa os passos de conversão, máscara morfológica e contornos."""
         self.img_hsv = cv2.cvtColor(self.img_original, cv2.COLOR_BGR2HSV)
 
         limite_inferior = np.array([self.h_min, self.s_min, self.v_min], dtype="uint8")
@@ -70,18 +70,15 @@ class DetectorIncendioSatelital:
         return mascara_limpa, contornos
 
     def registrar_log(self, mensagem):
-        """Grava logs de auditoria técnica em um arquivo texto."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        linha_log = f"[{timestamp}] {mensagem}\n"
         with open("historico_satelite.log", "a", encoding="utf-8") as f:
-            f.write(linha_log)
+            f.write(f"[{timestamp}] {mensagem}\n")
 
-    def salvar_alerta_json(self, qtd_focos, area_total):
-        """Exporta os dados da anomalia térmica em formato JSON para integração com a equipe."""
+    def salvar_alerta_json(self, nome_arquivo, qtd_focos, area_total):
         dados_alerta = {
             "satelite_status": "ALERTA_CRITICO",
             "timestamp": datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "quadrante_analisado": os.path.basename(self.caminho_imagem),
+            "quadrante_analisado": os.path.basename(nome_arquivo),
             "focos_detectados": qtd_focos,
             "area_afetada_pixels": round(area_total, 2),
             "nivel_severidade": "ALTO" if area_total > 500 else "MEDIO"
@@ -89,67 +86,84 @@ class DetectorIncendioSatelital:
         with open("alerta_ativo.json", "w", encoding="utf-8") as f:
             json.dump(dados_alerta, f, indent=4, ensure_ascii=False)
 
-    def renderizar_e_detectar(self):
-        """Inicia o loop principal de monitoramento e exibição do pipeline."""
-        if not self.carregar_imagem():
+    def iniciar_simulacao_orbita(self):
+        """Varre a pasta de imagens simulando o deslocamento do satélite."""
+        if not self.mapear_arquivos_orbita():
+            print("[ERRO] Nenhuma imagem encontrada na pasta 'imagens/'.")
             return
 
         self.inicializar_painel_controle()
-        self.registrar_log("Monitoramento orbital iniciado via interface de calibração.")
+        self.registrar_log("--- NOVA SIMULAÇÃO DE TRANSMISSÃO ORBITAL INICIADA ---")
         
-        print("\n[SISTEMA] Satélite operacional. Gerando logs e payloads de integração...")
-        print("[SISTEMA] Pressione 'q' para encerrar.")
+        print("\n🛰️ [SISTEMA] Satélite em órbita baixa iniciado.")
+        print("🎮 Comandos das janelas: Press 'n' para avançar de quadrante | Press 'q' para abortar missão.")
 
-        # Variável para controlar os prints no terminal e não inundar a tela
-        ultimo_alerta_status = None
+        # Loop para percorrer a lista de imagens mapeadas
+        for indice, caminho_img in enumerate(self.lista_imagens):
+            nome_breve = os.path.basename(caminho_img)
+            print(f"\n🌍 [ÓRBITA] Entrando no Quadrante {indice + 1}/{len(self.lista_imagens)}: {nome_breve}")
+            
+            self.img_original = cv2.imread(caminho_img)
+            self.registrar_log(f"Analisando quadrante terrestre: {nome_breve}")
 
-        while True:
-            self.atualizar_valores_filtros()
-            mascara_limpa, contornos = self.processar_pipeline_pdi()
+            ultimo_status_impresso = None
 
-            img_resultado = self.img_original.copy()
-            focos_validos = 0
-            area_total_pixels = 0
+            # Loop interno de calibração para o frame/imagem atual
+            while True:
+                self.atualizar_valores_filtros()
+                mascara_limpa, contornos = self.processar_pipeline_pdi()
 
-            for idx, contorno in enumerate(contornos):
-                area = cv2.contourArea(contorno)
-                if area > 20:
-                    focos_validos += 1
-                    area_total_pixels += area
-                    x, y, largura, altura = cv2.boundingRect(contorno)
-                    cv2.rectangle(img_resultado, (x, y), (x + largura, y + altura), (0, 0, 255), 2)
-                    cv2.putText(img_resultado, f"FOCO_{focos_validos}", (x, y - 5), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                img_resultado = self.img_original.copy()
+                focos_validos = 0
+                area_total_pixels = 0
 
-            # Lógica de disparo e gravação de arquivos baseada nos achados
-            if focos_validos > 0:
-                self.salvar_alerta_json(focos_validos, area_total_pixels)
-                if ultimo_alerta_status != "ALERTA":
-                    self.registrar_log(f"INCÊNDIO DETECTADO! Focos: {focos_validos} | Área: {area_total_pixels}px")
-                    print(f"\n🚨 [ALERTA] Payload de telemetria exportado para 'alerta_ativo.json'!")
-                    ultimo_alerta_status = "ALERTA"
-            else:
-                # Se não há fogo, remove o JSON de alerta crítico para limpar o status do backend
-                if os.path.exists("alerta_ativo.json"):
-                    os.remove("alerta_ativo.json")
-                if ultimo_alerta_status != "OK":
-                    self.registrar_log("Nenhuma anomalia térmica detectada no quadrante.")
-                    print("\n✅ [STATUS] Quadrante normalizado. Arquivo de alerta limpo.")
-                    ultimo_alerta_status = "OK"
+                for contorno in contornos:
+                    area = cv2.contourArea(contorno)
+                    if area > 20:
+                        focos_validos += 1
+                        area_total_pixels += area
+                        x, y, largura, altura = cv2.boundingRect(contorno)
+                        cv2.rectangle(img_resultado, (x, y), (x + largura, y + altura), (0, 0, 255), 2)
+                        cv2.putText(img_resultado, f"FOCO_{focos_validos}", (x, y - 5), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            # Renderização das janelas passo a passo
-            cv2.imshow("Janela 1 - Imagem Original Satelite", self.img_original)
-            cv2.imshow("Janela 2 - Conversao para Espaco HSV", self.img_hsv)
-            cv2.imshow("Janela 3 - Mascara Binaria (Filtro Isolado)", mascara_limpa)
-            cv2.imshow("Janela 4 - Resultado Final (Deteccao e Alertas)", img_resultado)
+                # Gerenciamento de alertas dinâmicos por imagem
+                if focos_validos > 0:
+                    self.salvar_alerta_json(caminho_img, focos_validos, area_total_pixels)
+                    if ultimo_status_impresso != "ALERTA":
+                        self.registrar_log(f"Anomalia em {nome_breve}! Focos: {focos_validos} | Área: {area_total_pixels}px")
+                        print(f"   🚨 Foco detectado! Telemetria exportada para 'alerta_ativo.json'.")
+                        ultimo_status_impresso = "ALERTA"
+                else:
+                    if os.path.exists("alerta_ativo.json"):
+                        os.remove("alerta_ativo.json")
+                    if ultimo_status_impresso != "OK":
+                        self.registrar_log(f"Quadrante {nome_breve} está estável e seguro.")
+                        print("   ✅ Varredura limpa. Nenhuma assinatura térmica de risco encontrada.")
+                        ultimo_status_impresso = "OK"
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                self.registrar_log("Monitoramento encerrado pelo operador orbital.")
-                break
+                # Renderização das etapas visuais
+                cv2.imshow("Janela 1 - Imagem Original Satelite", self.img_original)
+                cv2.imshow("Janela 2 - Conversao para Espaco HSV", self.img_hsv)
+                cv2.imshow("Janela 3 - Mascara Binaria (Filtro Isolado)", mascara_limpa)
+                cv2.imshow("Janela 4 - Resultado Final (Deteccao e Alertas)", img_resultado)
 
+                # Monitoramento do teclado
+                tecla = cv2.waitKey(1) & 0xFF
+                if tecla == ord('n'): # 'n' quebra o loop interno e pula para a próxima imagem da lista
+                    print(f"⬇️ [SISTEMA] Movendo órbita para o próximo quadrante...")
+                    break
+                elif tecla == ord('q'): # 'q' encerra toda a execução do programa
+                    print("\n🛑 [SISTEMA] Missão abortada pelo operador de controle.")
+                    self.registrar_log("Varredura interrompida pelo painel de controle.")
+                    cv2.destroyAllWindows()
+                    return
+
+        print("\n🏁 [SISTEMA] Varredura orbital completa! Todos os quadrantes da pasta foram analisados.")
+        self.registrar_log("Simulação finalizada com sucesso.")
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    caminho = os.path.join("imagens", "satelite_fogo.jpg")
-    detector = DetectorIncendioSatelital(caminho)
-    detector.renderizar_e_detectar()
+    pasta_alvo = "imagens"
+    simulador = DetectorIncendioSatelital(pasta_alvo)
+    simulador.iniciar_simulacao_orbita()
