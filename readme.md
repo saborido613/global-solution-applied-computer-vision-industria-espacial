@@ -44,7 +44,7 @@ detector-incendio-espacial/
 ├── alerta_ativo.json       # Payload JSON gerado dinamicamente em caso de incêndio (ignorado no git)
 └── README.md               # Documentação técnica do projeto
 
-# 🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto
 
 ## Pré-requisitos
 Certifique-se de ter o Python instalado no seu sistema (recomenda-se a versão 3.10 ou superior).
