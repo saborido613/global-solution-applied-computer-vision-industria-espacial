@@ -154,10 +154,10 @@ Encerra a simulação com segurança, fechando todas as janelas e finalizando os
 | Nome                | RM      |
 | ------------------- | ------- |
 | João Pedro Saborido | RM98184 |
-| Lucca Alexandre     | RMXXXXX |
-| Matheus Haruo       | RMXXXXX |
-| Pedro Guerra        | RMXXXXX |
-| Victor Wittner      | RMXXXXX |
+| Lucca Alexandre     | RM99700 |
+| Matheus Haruo       | RM97663 |
+| Pedro Guerra        | RM99526 |
+| Victor Wittner      | RM98667 |
 
 ---
 
