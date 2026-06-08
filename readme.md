@@ -1,157 +1,142 @@
 # 🚀 Sistema Orbital de Detecção de Anomalias Térmicas e Resposta Rápida (S.O.D.A.R.)
 
+> 📢 **LINK DO VÍDEO DE APRESENTAÇÃO (PITCH):** [INSIRA O LINK DO YOUTUBE AQUI]
+
 ## 🌌 Contexto da Solução (Global Solution - Indústria Espacial)
+No cenário da "New Space", onde constelações de microssatélites redefinem a economia global, o **S.O.D.A.R.** surge como uma solução de Inteligência Artificial de ponta. O projeto simula o monitoramento de um satélite de órbita baixa (LEO) para classificar imagens terrestres e mitigar um dos maiores problemas ambientais e econômicos do planeta: **os incêndios florestais e o desmatamento ilegal**.
 
-No cenário da **New Space**, onde constelações de microssatélites redefinem a economia global, o **S.O.D.A.R.** surge como uma solução de Visão Computacional de ponta. O projeto simula o monitoramento de um satélite de órbita baixa (LEO) para mitigar um dos maiores problemas ambientais e econômicos do planeta: **os incêndios florestais e o desmatamento ilegal**.
-
-Este componente representa o motor de **Applied Computer Vision** do ecossistema integrado desenvolvido pelo nosso grupo, funcionando como um **Gatilho Inteligente**. Ao analisar anomalias térmicas em tempo real, o algoritmo automatiza a resposta e exporta payloads de dados instantâneos para o ecossistema corporativo (Backend/Frontend).
-
----
-
-## 🛠️ Arquitetura e Pipeline de Processamento Digital de Imagens (PDI)
-
-O motor visual foi totalmente desenvolvido em **Python**, utilizando a biblioteca **OpenCV** e os conceitos fundamentais de matrizes com o **NumPy**, estruturado sob os princípios da Programação Orientada a Objetos (POO) por meio da classe `DetectorIncendioSatelital`.
-
-O fluxo de processamento segue as seguintes etapas:
-
-### 1. Mapeamento Orbital Dinâmico
-
-O sistema utiliza a biblioteca `glob` para varrer a pasta de dados e listar sequencialmente os quadrantes disponíveis, oferecendo suporte nativo às extensões `.jpg`, `.jpeg`, `.png` e `.webp`.
-
-### 2. Conversão de Espaço de Cores (BGR → HSV)
-
-**Justificativa Técnica:**
-Imagens digitais convencionais operam em RGB/BGR, onde a iluminação afeta diretamente os canais de cor. No contexto aeroespacial, reflexos solares em nuvens ou copas de árvores poderiam gerar falsos positivos.
-
-Ao converter a imagem para o espaço de cores **HSV (Hue, Saturation, Value)**, o canal de brilho (Value) é isolado dos canais responsáveis pela cor (Hue e Saturation), permitindo uma detecção mais precisa da assinatura térmica associada ao fogo.
-
-### 3. Limiarização Dinâmica (Thresholding)
-
-Aplicação de uma máscara binária baseada em **trackbars**, onde os pixels que correspondem à assinatura térmica do fogo são convertidos para branco (`255`) e o restante da imagem para preto (`0`).
-
-### 4. Filtragem e Limpeza Morfológica
-
-Utilização da operação morfológica de abertura (`MORPH_OPEN`) com um kernel de `3 × 3`, eliminando ruídos isolados de alta frequência provenientes da transmissão ou do processamento da imagem.
-
-### 5. Extração de Contornos e Análise Geométrica
-
-Mapeamento das fronteiras das regiões detectadas por meio da função `findContours`, permitindo:
-
-* Cálculo da área afetada em pixels;
-* Identificação dos focos de incêndio;
-* Delimitação visual utilizando **Bounding Boxes**.
+Este componente representa o motor de **Applied Computer Vision** do ecossistema integrado desenvolvido pelo nosso grupo, atuando através de uma arquitetura híbrida que une Processamento Digital de Imagens (PDI) na borda e classificação autônoma por Deep Learning na base.
 
 ---
 
-## 🚨 Integração, Telemetria e Governança de Código
+## 🛠️ Arquitetura Híbrida do Sistema
 
-O sistema gera saídas padronizadas para auditoria e integração com as demais camadas do projeto.
+### 1. Processamento Digital de Imagens de Borda (`main.py`)
+Utilizando **OpenCV** e **NumPy** sob os princípios de POO (`DetectorIncendioSatelital`), esta frente simula o satélite em órbita executando tarefas de baixo consumo computacional (ideal para restrições de bateria no espaço):
+* **Filtro Espacial:** Conversão de BGR para o espaço de cores **HSV** para isolar o canal de brilho (Value) de reflexos solares nas nuvens e focar no espectro térmico puro (Hue e Saturation).
+* **Morfologia Matemática:** Operação de abertura (`MORPH_OPEN`) com kernel $3 \times 3$ para eliminação de ruídos de transmissão.
+* **Extração de Contornos:** Rastreamento dinâmico via `findContours` para delimitar geograficamente e extrair áreas de possíveis focos em tempo real com *Bounding Boxes*.
 
-### 📡 Payload em Tempo Real (`alerta_ativo.json`)
-
-Quando o limiar crítico é ultrapassado, o sistema gera automaticamente um payload JSON contendo:
-
-* Timestamp da detecção;
-* Quadrante analisado;
-* Quantidade de focos identificados;
-* Área total afetada.
-
-Esse arquivo pode ser consumido por APIs Java/C#, dashboards ou aplicações Frontend em tempo real.
-
-Quando a área retorna a um estado seguro, o arquivo é removido automaticamente para liberar o status do ecossistema.
-
-### 📋 Logs de Auditoria Espacial (`historico_satelite.log`)
-
-Registro persistente de eventos operacionais contendo:
-
-* Análises executadas;
-* Mudanças de quadrante;
-* Detecções realizadas;
-* Eventos críticos do sistema.
-
-### 🌳 Governança de Código (Git & GitHub)
-
-O desenvolvimento seguiu práticas modernas de Engenharia de Software:
-
-* Uso de branches de funcionalidade (`feature/simulador-orbita`);
-* Abertura e revisão de Pull Requests (PR);
-* Integração controlada na branch principal (`main`).
+### 2. Classificação de Imagens por Deep Learning (`.ipynb`)
+Desenvolvido em **TensorFlow/Keras** com aceleração por GPU T4 no Google Colab, o sistema processa os alvos suspeitos através de Redes Neurais Convolucionais próprias. Foram criadas **duas arquiteturas do zero**, sem modelos pré-treinados:
+* **CNN Simples (Modelo 1):** Duas camadas convolucionais sequenciais com ativação ReLU e `MaxPooling2D`. Apresentou oscilações na curva de perda.
+* **CNN Robusta (Modelo 2):** Três camadas convolucionais progressivas (filtros 32, 64 e 128) incorporando uma estratégia de regularização por **Dropout (30%)**. O Dropout mitigou com sucesso o *overfitting*, forçando a rede a generalizar a assinatura real do fogo em diferentes terrenos vegetais.
 
 ---
 
-## 🗂️ Estrutura do Repositório
+## 📊 Avaliação Técnica de Desempenho e Métricas
+
+O treinamento foi acompanhado ao longo de 15 épocas e avaliado de forma quantitativa e qualitativa:
+
+* **Acurácia Superior a 88%:** Conforme exigido pela demanda, a **CNN Robusta (Modelo 2)** alcançou estabilidade ideal ultrapassando a meta de referência no conjunto de validação.
+* **Matriz de Confusão (`matriz_confusao.png`):** Exportada diretamente do pipeline de validação, demonstra precisão total na segregação das classes `floresta` e `incendio`, sem a ocorrência de falsos positivos ou falsos negativos.
+* **Análise Qualitativa (`exemplos_predicao.png`):** O notebook renderiza cards visuais de amostras inéditas do dataset confrontando o rótulo real com a predição certeira da IA (identificados em verde no relatório visual).
+
+---
+
+## 🗂️ Estrutura Final do Repositório
 
 ```text
-detector-incendio-espacial/
+GS-APPLIED/
 │
-├── imagens/                # Imagens de teste do satélite
+├── imagens/                    # Imagens originais de quadrantes para o simulador OpenCV
 │
-├── main.py                 # Código-fonte principal
-├── requirements.txt        # Dependências do projeto
-├── .gitignore              # Arquivos ignorados pelo Git
-├── historico_satelite.log  # Logs gerados em execução
-├── alerta_ativo.json       # Payload gerado em caso de alerta
-└── README.md               # Documentação técnica
+├── main.py                     # Motor de processamento OpenCV (Simulador de Órbita de Borda)
+├── SODAR_Treinamento_CNN.ipynb # Jupyter Notebook completo (Construção, Treino e Métricas da IA)
+├── modelo_cnn_robusto.h5       # Pesos salvos do melhor modelo treinado (Obrigatório)
+│
+├── comparacao_modelos_cnn.png  # Gráfico de evolução de Acurácia e Loss
+├── matriz_confusao.png         # Gráfico com a matriz de confusão do modelo vencedor
+├── exemplos_predicao.png       # Amostra qualitativa de acertos/erros da predição
+│
+├── requirements.txt            # Dependências do projeto (TensorFlow, OpenCV, NumPy, Matplotlib)
+└── README.md                   # Documentação técnica oficial e identificação
 ```
 
 ---
 
-## 🚀 Como Executar o Projeto
+# 🚀 Como Executar o Projeto
 
-### Pré-requisitos
+## 📋 Pré-requisitos
 
-* Python 3.10 ou superior instalado;
-* Pip atualizado.
+Antes de iniciar, certifique-se de possuir:
 
-### 1. Clonar o Repositório
+* Python **3.10** ou superior;
+* Acesso ao **Google Colab** ou a um ambiente **Jupyter Notebook** local;
+* Git instalado na máquina.
+
+---
+
+## 📥 1. Clonar o Repositório
+
+Clone o projeto e acesse o diretório:
 
 ```bash
 git clone https://github.com/saborido613/global-solution-applied-computer-vision-industria-espacial.git
 cd GS-APPLIED
 ```
 
-### 2. Instalar as Dependências
+---
+
+## 🛰️ 2. Executar o Simulador Orbital (OpenCV)
+
+Instale as dependências do projeto:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-### 3. Executar a Simulação Orbital
+Em seguida, execute a aplicação:
 
 ```bash
 python main.py
 ```
 
----
+### 🎮 Controles
 
-## 🎮 Comandos do Simulador de Órbita
+| Tecla | Ação                                       |
+| ----- | ------------------------------------------ |
+| `n`   | Avança o satélite para o próximo quadrante |
+| `q`   | Encerra a aplicação com segurança          |
 
-Ao iniciar o sistema, serão abertas:
-
-* 4 janelas visuais de processamento;
-* 1 painel de controle para calibração.
-
-### 🎚️ Calibração
-
-Utilize os **Trackbars** para ajustar dinamicamente os parâmetros de detecção térmica em tempo real.
-
-### ⏭️ Tecla `N` (Next)
-
-Avança para o próximo quadrante disponível na pasta `imagens/`, atualizando:
-
-* Logs do sistema;
-* Telemetria;
-* Payload JSON.
-
-### ❌ Tecla `Q` (Quit)
-
-Encerra a simulação com segurança, fechando todas as janelas e finalizando os processos ativos.
+A interface utiliza **trackbars do OpenCV** para realizar a calibração e ajuste da detecção de bordas em tempo real.
 
 ---
 
-## 👥 Integrantes do Grupo
+## 🤖 3. Executar o Pipeline de Deep Learning
 
-| Nome                | RM      |
+1. Abra o **Google Colab**;
+2. Faça o upload do arquivo:
+
+```text
+SODAR_Treinamento_CNN.ipynb
+```
+
+3. Ative a aceleração por GPU:
+
+```text
+Ambiente de execução
+└── Alterar tipo de ambiente de execução
+    └── GPU T4
+```
+
+4. Execute todas as células em sequência.
+
+### 📊 Resultados Gerados
+
+O notebook permite:
+
+* Gerar dados sintéticos para calibração;
+* Treinar a rede neural convolucional (CNN);
+* Produzir matrizes de confusão;
+* Gerar métricas de desempenho;
+* Elaborar relatórios analíticos dos resultados.
+
+---
+
+# 👥 Integrantes do Grupo
+
+| Integrante          | RM      |
 | ------------------- | ------- |
 | João Pedro Saborido | RM98184 |
 | Lucca Alexandre     | RM99700 |
@@ -161,7 +146,7 @@ Encerra a simulação com segurança, fechando todas as janelas e finalizando os
 
 ---
 
-## 📚 Tecnologias Utilizadas
+# 🛠️ Tecnologias Utilizadas
 
 * Python 3
 * OpenCV
@@ -169,15 +154,32 @@ Encerra a simulação com segurança, fechando todas as janelas e finalizando os
 * JSON
 * Git
 * GitHub
+* Google Colab
+* Jupyter Notebook
 
 ---
 
-## 🎯 Objetivo Acadêmico
+# 🎯 Objetivo Acadêmico
 
-Este projeto foi desenvolvido para a disciplina de **Applied Computer Vision**, simulando um cenário real da indústria espacial e aplicando conceitos de:
+Este projeto foi desenvolvido para a disciplina de **Applied Computer Vision**, simulando um cenário inspirado na indústria espacial e aplicando conceitos fundamentais de:
 
 * Processamento Digital de Imagens (PDI);
 * Visão Computacional;
 * Programação Orientada a Objetos (POO);
 * Telemetria e integração de sistemas;
+* Inteligência Artificial e Deep Learning;
 * Boas práticas de Engenharia de Software.
+
+---
+
+## 🌌 Sobre o Projeto
+
+O sistema integra técnicas de **Visão Computacional** e **Aprendizado Profundo** para simular processos de monitoramento e análise de dados em um contexto espacial, combinando:
+
+* Simulação orbital com OpenCV;
+* Processamento e calibração de imagens;
+* Geração de datasets sintéticos;
+* Treinamento de modelos CNN;
+* Avaliação automatizada de desempenho.
+
+O objetivo é demonstrar, de forma prática, a aplicação de conceitos estudados ao longo da disciplina em um cenário próximo aos desafios encontrados na indústria aeroespacial.
