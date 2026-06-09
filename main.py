@@ -16,7 +16,6 @@ class DetectorIncendioSatelital:
         self.img_original = None
         self.img_hsv = None
         
-        # Valores calibrados padrão para o filtro do fogo
         self.h_min, self.s_min, self.v_min = 0, 100, 200
         self.h_max, self.s_max, self.v_max = 25, 255, 255
 
@@ -25,9 +24,8 @@ class DetectorIncendioSatelital:
         padrao_busca = os.path.join(self.pasta_imagens, "*.*")
         arquivos = glob.glob(padrao_busca)
         
-        # Filtrar apenas formatos de imagem comuns
         self.lista_imagens = [arq for arq in arquivos if arq.lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))]
-        self.lista_imagens.sort() # Ordena para a simulação ter sequência
+        self.lista_imagens.sort() 
         
         print(f"[LOG] Órbita mapeada. {len(self.lista_imagens)} quadrantes terrestres prontos para análise.")
         return len(self.lista_imagens) > 0
@@ -98,7 +96,6 @@ class DetectorIncendioSatelital:
         print("\n🛰️ [SISTEMA] Satélite em órbita baixa iniciado.")
         print("🎮 Comandos das janelas: Press 'n' para avançar de quadrante | Press 'q' para abortar missão.")
 
-        # Loop para percorrer a lista de imagens mapeadas
         for indice, caminho_img in enumerate(self.lista_imagens):
             nome_breve = os.path.basename(caminho_img)
             print(f"\n🌍 [ÓRBITA] Entrando no Quadrante {indice + 1}/{len(self.lista_imagens)}: {nome_breve}")
@@ -108,7 +105,6 @@ class DetectorIncendioSatelital:
 
             ultimo_status_impresso = None
 
-            # Loop interno de calibração para o frame/imagem atual
             while True:
                 self.atualizar_valores_filtros()
                 mascara_limpa, contornos = self.processar_pipeline_pdi()
@@ -127,7 +123,6 @@ class DetectorIncendioSatelital:
                         cv2.putText(img_resultado, f"FOCO_{focos_validos}", (x, y - 5), 
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-                # Gerenciamento de alertas dinâmicos por imagem
                 if focos_validos > 0:
                     self.salvar_alerta_json(caminho_img, focos_validos, area_total_pixels)
                     if ultimo_status_impresso != "ALERTA":
@@ -142,18 +137,16 @@ class DetectorIncendioSatelital:
                         print("   ✅ Varredura limpa. Nenhuma assinatura térmica de risco encontrada.")
                         ultimo_status_impresso = "OK"
 
-                # Renderização das etapas visuais
                 cv2.imshow("Janela 1 - Imagem Original Satelite", self.img_original)
                 cv2.imshow("Janela 2 - Conversao para Espaco HSV", self.img_hsv)
                 cv2.imshow("Janela 3 - Mascara Binaria (Filtro Isolado)", mascara_limpa)
                 cv2.imshow("Janela 4 - Resultado Final (Deteccao e Alertas)", img_resultado)
 
-                # Monitoramento do teclado
                 tecla = cv2.waitKey(1) & 0xFF
-                if tecla == ord('n'): # 'n' quebra o loop interno e pula para a próxima imagem da lista
+                if tecla == ord('n'):
                     print(f"⬇️ [SISTEMA] Movendo órbita para o próximo quadrante...")
                     break
-                elif tecla == ord('q'): # 'q' encerra toda a execução do programa
+                elif tecla == ord('q'): 
                     print("\n🛑 [SISTEMA] Missão abortada pelo operador de controle.")
                     self.registrar_log("Varredura interrompida pelo painel de controle.")
                     cv2.destroyAllWindows()

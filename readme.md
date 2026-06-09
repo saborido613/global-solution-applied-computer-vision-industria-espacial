@@ -1,6 +1,6 @@
 # 🚀 Sistema Orbital de Detecção de Anomalias Térmicas e Resposta Rápida (S.O.D.A.R.)
 
-> 📢 **LINK DO VÍDEO DE APRESENTAÇÃO (PITCH):** [INSIRA O LINK DO YOUTUBE AQUI]
+> 📢 **LINK DO VÍDEO DE APRESENTAÇÃO (PITCH):** https://youtu.be/QZWA2FYBBvA
 
 ## 🌌 Contexto da Solução (Global Solution - Indústria Espacial)
 No cenário da "New Space", onde constelações de microssatélites redefinem a economia global, o **S.O.D.A.R.** surge como uma solução de Inteligência Artificial de ponta. O projeto simula o monitoramento de um satélite de órbita baixa (LEO) para classificar imagens terrestres e mitigar um dos maiores problemas ambientais e econômicos do planeta: **os incêndios florestais e o desmatamento ilegal**.
@@ -139,7 +139,6 @@ O notebook permite:
 | Integrante          | RM      |
 | ------------------- | ------- |
 | João Pedro Saborido | RM98184 |
-| Lucca Alexandre     | RM99700 |
 | Matheus Haruo       | RM97663 |
 | Pedro Guerra        | RM99526 |
 | Victor Wittner      | RM98667 |
